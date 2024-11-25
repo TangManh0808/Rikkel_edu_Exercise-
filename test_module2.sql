@@ -120,12 +120,64 @@ GROUP BY p.storeId
 ORDER BY total_revenue DESC
 LIMIT 1;
 -- Hiển thị danh sách người dùng và tổng số tiền họ đã chi tiêu.
-
+SELECT 
+    u.userId, 
+    u.userName, 
+    SUM(od.quantityOrder * od.priceOrder) AS total_spent
+FROM users u
+JOIN orders o ON u.userId = o.userId
+JOIN order_details od ON o.orderId = od.orderId
+GROUP BY u.userId, u.userName ;
 -- Tìm đơn hàng có tổng giá trị cao nhất và liệt kê thông tin chi tiết.
+SELECT 
+    o.orderId, 
+    o.nameOrder, 
+    o.totalPrice, 
+    o.addressOrder, 
+    o.phoneOrder
+FROM orders o
+ORDER BY o.totalPrice DESC
+LIMIT 1;
+
 -- Tính số lượng sản phẩm trung bình được bán ra trong mỗi đơn hàng.
+SELECT 
+    AVG(od.quantityOrder) AS avg_products_per_order
+FROM 
+    order_details od;
 -- Hiển thị tên sản phẩm và số lần sản phẩm đó được thêm vào giỏ hàng.
+SELECT 
+    p.productId, 
+    p.productName, 
+    SUM(c.quantityCart) AS times_in_cart
+FROM products p
+JOIN carts c ON p.productId = c.productId
+GROUP BY p.productId, p.productName 
+ORDER BY times_in_cart DESC;
+
 -- Tìm tất cả các sản phẩm đã bán nhưng không còn tồn kho trong kho hàng.
+SELECT 
+    p.productId, 
+    p.productName, 
+    p.quantity, 
+    SUM(od.quantityOrder) AS total_sold
+FROM products p
+JOIN order_details od ON p.productId = od.productId
+GROUP BY p.productId, p.productName, p.quantity
+HAVING p.quantity = 0 AND total_sold > 0;
 -- Tìm các đơn hàng được thực hiện bởi người dùng có email là duong@gmail.com'.
+SELECT * 
+FROM orders o
+JOIN users u ON o.userId = u.userId
+WHERE u.email = 'duong@gmail.com';
+
 -- Hiển thị danh sách các cửa hàng kèm theo tổng số lượng sản phẩm mà họ sở hữu.
+SELECT 
+    s.storeId, 
+    s.storeName, 
+    SUM(p.quantity) AS total_products
+FROM stores s
+JOIN products p ON s.storeId = p.storeId
+GROUP BY s.storeId, s.storeName
+ORDER BY total_products DESC;
 
 
