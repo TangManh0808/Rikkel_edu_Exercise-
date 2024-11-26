@@ -179,5 +179,128 @@ FROM stores s
 JOIN products p ON s.storeId = p.storeId
 GROUP BY s.storeId, s.storeName
 ORDER BY total_products DESC;
+-- Exercise 04
+-- View hiển thị tên sản phẩm (productName) và giá (price) từ bảng products với giá trị giá (price) 
+-- lớn hơn 500,000 có tên là expensive_products
+CREATE VIEW expensive_products AS 
+SELECT productName, price
+FROM products
+WHERE price > 500000;
 
+-- Truy vấn dữ liệu từ view vừa tạo expensive_products
+SELECT * 
+FROM expensive_products;
+-- Làm thế nào để cập nhật giá trị của view? Ví dụ, cập nhật giá (price) 
+-- thành 600,000 cho sản phẩm có tên Product A trong view expensive_products.
+UPDATE products
+SET price = 600000
+WHERE productName = 'Product A';
+-- Làm thế nào để xóa view expensive_products?
+DROP VIEW expensive_products;
 
+--  Tạo một view hiển thị tên sản phẩm (productName), tên danh mục (categoryName) 
+-- bằng cách kết hợp bảng products và categories.
+CREATE VIEW product_categories AS
+SELECT p.productName, c.categoryName
+FROM products p
+JOIN categories c ON p.categoryId = c.categoryId;
+-- Exercise 05
+-- Làm thế nào để tạo một index trên cột productName của bảng products?
+CREATE INDEX index_productName ON products(productName);
+-- Hiển thị danh sách các index trong cơ sở dữ liệu?
+SHOW INDEX FROM products;
+-- Trình bày cách xóa index idx_productName đã tạo trước đó?
+DROP INDEX idx_productName ON products;
+-- Tạo một procedure tên getProductByPrice để lấy danh sách sản phẩm 
+-- với giá lớn hơn một giá trị đầu vào (priceInput)?
+DELIMITER $$
+CREATE PROCEDURE getProductByPrice(IN priceInput DECIMAL(10, 2))
+BEGIN
+    SELECT productId, productName, price, description, quantity
+    FROM products
+    WHERE price > priceInput;
+END $$
+DELIMITER ;
+-- Làm thế nào để gọi procedure getProductByPrice với đầu vào là 500000?
+CALL getProductByPrice(500000);
+-- Tạo một procedure getOrderDetails trả về thông tin chi tiết đơn hàng với đầu vào là orderId?
+DELIMITER $$
+
+CREATE PROCEDURE getOrderDetails(IN orderIdInput INT)
+BEGIN
+    SELECT od.orderDetailId, od.productId, p.productName, od.quantityOrder, od.priceOrder
+    FROM order_details od
+    JOIN products p ON od.productId = p.productId
+    WHERE od.orderId = orderIdInput;
+END $$
+
+DELIMITER ;
+-- Làm thế nào để xóa procedure getOrderDetails?
+DROP PROCEDURE getOrderDetails;
+
+-- Tạo một procedure tên addNewProduct để thêm mới một sản phẩm vào bảng products. 
+-- Các tham số gồm productName, price, description, và quantity.
+DELIMITER $$
+
+CREATE PROCEDURE addNewProduct(
+    IN productNameInput VARCHAR(255),
+    IN priceInput DECIMAL(10, 2),
+    IN descriptionInput TEXT,
+    IN quantityInput INT
+)
+BEGIN
+    INSERT INTO products (productName, price, description, quantity)
+    VALUES (productNameInput, priceInput, descriptionInput, quantityInput);
+END $$
+
+DELIMITER ;
+CALL addNewProduct('cá chua', 500000, 'mặn', 100);
+
+-- Tạo một procedure tên deleteProductById để xóa sản phẩm khỏi bảng products dựa trên tham số productId.
+DELIMITER $$
+
+CREATE PROCEDURE deleteProductById(IN productIdInput INT)
+BEGIN
+    DELETE FROM products
+    WHERE productId = productIdInput;
+END $$
+
+DELIMITER ;
+CALL deleteProductById(1);
+
+-- Tạo một procedure tên searchProductByName để tìm kiếm sản phẩm theo tên (tìm kiếm gần đúng) từ bảng products.
+DELIMITER $$
+
+CREATE PROCEDURE searchProductByName(IN productNameInput VARCHAR(255))
+BEGIN
+    SELECT productId, productName, price, description, quantity
+    FROM products
+    WHERE productName LIKE CONCAT('%', productNameInput, '%');
+END $$
+
+DELIMITER ;
+
+-- Tạo một procedure tên filterProductsByPriceRange để lấy danh sách sản phẩm có giá 
+-- trong khoảng từ minPrice đến maxPrice.
+DELIMITER $$
+
+CREATE PROCEDURE filterProductsByPriceRange(IN minPrice DECIMAL(10, 2), IN maxPrice DECIMAL(10, 2))
+BEGIN
+    SELECT productId, productName, price, description, quantity
+    FROM products
+    WHERE price BETWEEN minPrice AND maxPrice;
+END $$
+
+DELIMITER ;
+CALL filterProductsByPriceRange(100000, 500000);
+-- Tạo một procedure tên paginateProducts để phân trang danh sách sản phẩm, với hai tham số pageNumber và pageSize.
+DELIMITER $$
+CREATE PROCEDURE paginate(in page_size int, in page_numver int)
+BEGIN 
+	DECLARE offset_value INT;
+    SET offset_value = page_size * (page_numver -1);
+	SELECT * FROM products
+	LIMIT page_size
+	OFFSET offset_value; 
+END$$
+DELIMITER ;
